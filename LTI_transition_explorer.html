@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTI transition explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0847F7;--navy:#0B101C;--amber:#B07A1E;--amber-l:#F3C969;--bg:#F8FAFF;
+--line:#C8D3EA;--mute:#5A6B85;--o1bg:#EDF1FF;--o2bg:#FDF6E7;--warn:#B3261E}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);
+font:400 14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+header{padding:28px 32px 20px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--mute);font-size:13px}
+.wrap{display:grid;grid-template-columns:302px 1fr;gap:0;align-items:start}
+aside{padding:22px 24px;border-right:1px solid var(--line);position:sticky;top:0;
+max-height:100vh;overflow-y:auto}
+main{padding:22px 32px 60px;min-width:0}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+color:var(--mute);margin:20px 0 8px}
+.lbl:first-child{margin-top:0}
+input,select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:5px;
+background:#fff;font:inherit;font-variant-numeric:tabular-nums;color:var(--navy)}
+input:focus,select:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)}
+.presets{display:flex;flex-wrap:wrap;gap:5px}
+.presets button{flex:0 0 auto;padding:5px 9px;border:1px solid var(--line);background:#fff;
+border-radius:5px;font:600 12px Inter;cursor:pointer;color:var(--navy)}
+.presets button:hover{border-color:var(--blue);color:var(--blue)}
+.presets button[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff}
+.yrow{display:grid;grid-template-columns:44px 1fr 74px;gap:6px;align-items:center;margin-bottom:5px}
+.yrow span{font:600 12px/1 Inter;color:var(--mute);font-variant-numeric:tabular-nums}
+.yrow select{padding:5px 6px;font-size:12px}
+.yrow input{padding:5px 7px;font-size:12px;text-align:right}
+.chk{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;cursor:pointer}
+.chk input{width:auto;margin-top:2px;accent-color:var(--blue)}
+.chk div{font-size:13px}
+.chk small{display:block;color:var(--mute);font-size:11.5px;line-height:1.35}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.card{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:#fff}
+.card.o1{border-top:3px solid var(--blue)}
+.card.o2{border-top:3px solid var(--amber)}
+.card h3{margin:0 0 2px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.card.o1 h3{color:var(--blue)} .card.o2 h3{color:var(--amber)}
+.card .sub{color:var(--mute);font-size:11.5px;margin-bottom:10px}
+.card .big{font:700 25px/1 Inter;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.card .cap{font-size:11.5px;color:var(--mute);margin-top:3px}
+.card .row2{display:flex;gap:22px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+.card .row2 div{font-size:11.5px;color:var(--mute)}
+.card .row2 b{display:block;font:600 14px Inter;color:var(--navy);font-variant-numeric:tabular-nums}
+h2{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+color:var(--mute);margin:26px 0 10px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:5px 7px;text-align:right;font-size:12.5px;border-bottom:1px solid #E7ECF7}
+th{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+color:var(--mute);text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td.y{font-weight:600}
+tr.tr-year td{background:#FFF6D0}
+td.o1{background:var(--o1bg)} td.o2{background:var(--o2bg)}
+td.tot{font-weight:600}
+.promo{color:var(--blue);font-weight:700}
+.over{color:var(--warn);font-weight:600}
+.ladder{border:1px solid var(--line);border-radius:8px;background:#fff;padding:12px 14px;overflow-x:auto}
+.lgrid{display:grid;gap:2px;min-width:640px}
+.lgrid .gh{font:600 10.5px Inter;color:var(--mute);text-align:center;padding-bottom:3px}
+.lgrid .gl{font-size:11.5px;color:var(--navy);padding-right:8px;white-space:nowrap;
+overflow:hidden;text-overflow:ellipsis}
+.cellv{border-radius:3px;text-align:center;font:600 11px/22px Inter;height:22px;
+font-variant-numeric:tabular-nums}
+.flags{margin-top:8px}
+.flag{display:flex;gap:9px;padding:8px 11px;border-radius:6px;background:#fff;
+border:1px solid var(--line);margin-bottom:6px;font-size:12.5px;align-items:flex-start}
+.flag b{color:var(--warn)}
+.flag.ok b{color:#1B8F63}
+.chartbox{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--mute);margin-top:6px;padding-left:6px}
+.legend i{display:inline-block;width:14px;height:2.5px;vertical-align:middle;margin-right:6px}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}aside{position:static;max-height:none;
+border-right:0;border-bottom:1px solid var(--line)}.cards{grid-template-columns:1fr}}
+</style></head><body>
+<header>
+<h1>LTI transition explorer</h1>
+<p>Enter someone's scheduled legacy vesting, then see what each option grants them and what they vest. Confidential, internal.</p>
+</header>
+<div class="wrap">
+<aside>
+  <div class="lbl">Start from</div>
+  <div class="presets" id="presets"></div>
+  <div class="lbl">Annual LTI target</div>
+  <input id="target" type="number" step="1000" value="100000">
+  <div class="lbl">Transition year</div>
+  <select id="T"></select>
+  <div class="lbl">Promotion</div>
+  <select id="promo"></select>
+  <div class="lbl">Legacy vest and rating by year</div>
+  <div id="yearrows"></div>
+  <div class="lbl">Rules</div>
+  <label class="chk"><input type="checkbox" id="tails" checked>
+    <div>Tail on pre-transition grants<small>Option 1 only. Off makes them one-year grants.</small></div></label>
+  <label class="chk"><input type="checkbox" id="newhire">
+    <div>Treat as a new hire<small>No legacy grant, starts on the new programme.</small></div></label>
+</aside>
+<main>
+  <div class="cards" id="cards"></div>
+  <h2>Total annual vest</h2>
+  <div class="chartbox"><div id="chart"></div>
+    <div class="legend"><span><i style="background:#0847F7"></i>Option 1, 100/15/5/5</span>
+    <span><i style="background:#B07A1E"></i>Option 2, 100/50 and 50/50</span>
+    <span><i style="background:#C8D3EA"></i>Steady-state ceiling</span></div></div>
+  <div id="flags" class="flags"></div>
+  <h2>Year by year</h2>
+  <div style="overflow-x:auto"><table id="tbl"></table></div>
+  <h2>What gets granted, Option 1</h2>
+  <div class="ladder" id="lad1"></div>
+  <h2>What gets granted, Option 2</h2>
+  <div class="ladder" id="lad2"></div>
+</main></div>
+<script>
+const VEC = {
+  shaped1:[1,.15,.05,.05], two_eq:[1,1,0,0], nhg50:[1,.5,0,0],
+  nhg50d:[0,1,.5,0], oneyr:[1,0,0,0], tail1:[0,.25,.10,.05]
+};
+const FACEM = {shaped1:1.25, two_eq:2, nhg50:1.5, nhg50d:1.5, oneyr:1, tail1:.40};
+
+function simulate(cfg){
+  const {years, target, legacy, T, promoYear, perf, tails, newHire, option,
+         base=1.25, perfM=1.5, promo1=2.0, o2nh=1.15, o2ref=0.5, floorF=0.25} = cfg;
+  const PROMO2 = 2*o2nh*target;
+  VEC.pretrans = tails ? [1,.15,.05,.05] : [1,0,0,0];
+  FACEM.pretrans = tails ? 1.25 : 1;
+  const grants=[], rows=[];
+  const promoLvl = promoYear!=null && promoYear<=T;
+  const hiT = perf[T]==='High';
+  const lvlT = promoLvl ? PROMO2 : target*(hiT?perfM:base);
+  const halfT = o2ref*(promoLvl ? PROMO2 : base*target);
+  const pushed = (lvlT - (legacy[T]||0) - halfT) < floorF*target;
+
+  for(const y of years){
+    const leg = legacy[y]||0;
+    let prior=0;
+    for(const g of grants){const k=y-g.fy; if(k>0&&k<=3) prior += g.D*VEC[g.vec][k];}
+    const sched = leg+prior;
+    const hi = perf[y]==='High';
+    const promoted = promoYear!=null && y>promoYear;
+    const ceil = target*(hi?perfM:base);
+    const fl = y<=T ? floorF*target*(hi?perfM:1) : 0;
+    const iss=[];
+    const add=(D,vec,tag,ly)=>iss.push({D,vec,tag,labelYear:ly||y,face:D*FACEM[vec]});
+
+    if(option===1){
+      if(promoYear===y){
+        add(Math.max(fl, target*promo1-leg), y<=T?'pretrans':'shaped1',
+            y<=T?'Promotion grant, gap to '+(target*promo1):'Promotion grant 100/15/5/5');
+      } else if(promoted && y!==T){
+        add(target*promo1,'shaped1','Refresh at the promoted level');
+      } else if(newHire){
+        add(target*(hi?perfM:1),'shaped1', y===years[0]?'New hire grant':(hi?'Refresh, high performance':'Refresh'));
+      } else if(y===T && promoLvl){
+        add(Math.max(fl, target*promo1-leg),'shaped1','Transition grant at the promoted level');
+      } else if(y===T){
+        add(Math.max(fl, ceil-leg),'oneyr','Transition grant 1, fills the gap');
+        add(target,'tail1','Transition grant 2, the standard tail');
+      } else if(y<T){
+        add(Math.max(fl, ceil-leg),'pretrans','Pre-transition top-up');
+      } else {
+        add(target*(hi?perfM:1),'shaped1', hi?'Refresh, high performance':'Refresh');
+      }
+    } else {
+      if(newHire){
+        if(y===years[0]) add(o2nh*target,'nhg50','New hire grant');
+        else if(promoYear===y) add(Math.max(0,PROMO2-sched),'oneyr','Promotion grant, gap to '+PROMO2);
+        else if(promoYear!=null && y===promoYear+1) add(PROMO2,'nhg50','Post-promotion grant');
+        else if(promoted) add(o2ref*PROMO2,'two_eq','Refresh at the promoted level');
+        else if(hi) add(Math.max(0,ceil-sched),'two_eq','Refresh, high performance');
+        else add(o2ref*o2nh*target,'two_eq','Refresh');
+      } else if(y===T){
+        const lvl=lvlT, half=halfT, g1=lvl-leg-half;
+        if(g1>=floorF*target){
+          if(leg<=1e-9) add(lvl,'nhg50','Transition grant, single');
+          else {add(g1,'oneyr','Transition grant 1, fills the gap');
+                add(half,'two_eq','Transition grant 2, two-year equal');}
+        } else {
+          add(Math.max(fl,lvl-leg),'oneyr','Transition grant 1, fills the gap');
+          add(lvl,'nhg50d','Transition grant 2, starts next year', y+1);
+        }
+      } else if(y===T+1 && pushed){
+      } else if(promoYear===y){
+        add(y<T?Math.max(fl,PROMO2-leg):Math.max(0,PROMO2-sched),'oneyr','Promotion grant, gap to '+PROMO2);
+      } else if(promoted){
+        add(o2ref*PROMO2,'two_eq','Refresh at the promoted level');
+      } else if(y<T){
+        add(Math.max(fl,ceil-leg),'oneyr','Pre-transition top-up');
+      } else if(hi){
+        add(Math.max(0,ceil-sched),'two_eq','Refresh, high performance');
+      } else {
+        add(o2ref*base*target,'two_eq','Refresh');
+      }
+    }
+    let own=0; for(const g of iss){own += g.D*VEC[g.vec][0]; grants.push({fy:y,D:g.D,vec:g.vec});}
+    rows.push({year:y, legacy:leg, prior, ceiling:ceil, total:sched+own,
+               face:iss.reduce((a,g)=>a+g.face,0), issued:iss});
+  }
+  return rows;
+}
+
+
+const YEARS=[];for(let y=2027;y<=2035;y++)YEARS.push(y);
+const PRESETS={
+ "A new hire":{T:2027,leg:{},nh:true},
+ "B 0 left":{T:2030,leg:{2027:100,2028:100,2029:100,2030:0}},
+ "C 25 left":{T:2030,leg:{2027:100,2028:100,2029:100,2030:25}},
+ "D 50 left":{T:2030,leg:{2027:100,2028:100,2029:100,2030:50}},
+ "E 75 left":{T:2030,leg:{2027:100,2028:100,2029:100,2030:75}},
+ "F 50 in 2027":{T:2027,leg:{2027:50}},
+ "G 75 in 2027":{T:2027,leg:{2027:75}},
+ "H 125 in 2028":{T:2028,leg:{2027:150,2028:125}},
+ "Blank":{T:2030,leg:{}}
+};
+let active="C 25 left";
+const $=id=>document.getElementById(id);
+const fmt=v=>{const t=+$("target").value||1;
+  if(t>=1000)return "$"+Math.round(v/1000)+"k";
+  return (Math.round(v*10)/10).toString();};
+const fmtx=v=>(Math.round(v*10)/10).toString();
+
+function buildControls(){
+  const pw=$("presets");
+  Object.keys(PRESETS).forEach(k=>{const b=document.createElement("button");
+    b.textContent=k;b.onclick=()=>{applyPreset(k);};pw.appendChild(b);});
+  $("T").innerHTML=YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  $("promo").innerHTML='<option value="">No promotion</option>'+
+    YEARS.map(y=>`<option value="${y}">Promoted in ${y}</option>`).join("");
+  $("yearrows").innerHTML=YEARS.map(y=>
+    `<div class="yrow"><span>${y}</span>
+     <input type="number" step="1000" id="leg${y}" value="0">
+     <select id="perf${y}"><option>Average</option><option>High</option></select></div>`).join("");
+  document.querySelectorAll("input,select").forEach(el=>{
+    el.addEventListener("input",()=>{if(el.id!=="target"||true)render();});});
+}
+function applyPreset(k){
+  active=k;const p=PRESETS[k];const t=+$("target").value||100000;
+  $("T").value=p.T;$("newhire").checked=!!p.nh;$("promo").value="";
+  YEARS.forEach(y=>{$("leg"+y).value=Math.round((p.leg[y]||0)/100*t);
+    $("perf"+y).value="Average";});
+  document.querySelectorAll("#presets button").forEach(b=>
+    b.setAttribute("aria-pressed",b.textContent===k));
+  render();
+}
+function readCfg(option){
+  const t=+$("target").value||100000;const legacy={},perf={};
+  YEARS.forEach(y=>{legacy[y]=+$("leg"+y).value||0;perf[y]=$("perf"+y).value;});
+  return {years:YEARS,target:t,legacy,T:+$("T").value,
+    promoYear:$("promo").value?+$("promo").value:null,perf,
+    tails:$("tails").checked,newHire:$("newhire").checked,option};
+}
+function lineChart(a,b,ceil){
+  const W=880,H=210,P={l:52,r:14,t:12,b:26};
+  const all=a.concat(b).concat(ceil);
+  const max=Math.max(...all)*1.08,min=0;
+  const x=i=>P.l+i*(W-P.l-P.r)/(YEARS.length-1);
+  const yv=v=>H-P.b-(v-min)/(max-min)*(H-P.t-P.b);
+  const path=arr=>arr.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+yv(v).toFixed(1)).join(" ");
+  const t=+$("target").value||1;
+  const ticks=[0,.25,.5,.75,1].map(f=>min+f*(max-min));
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img">`;
+  ticks.forEach(v=>{s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${yv(v)}" y2="${yv(v)}" stroke="#E7ECF7"/>
+   <text x="${P.l-8}" y="${yv(v)+4}" text-anchor="end" font-size="10" fill="#5A6B85">${t>=1000?"$"+Math.round(v/1000)+"k":Math.round(v)}</text>`;});
+  s+=`<path d="${path(ceil)}" fill="none" stroke="#C8D3EA" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  s+=`<path d="${path(a)}" fill="none" stroke="#0847F7" stroke-width="2.4"/>`;
+  s+=`<path d="${path(b)}" fill="none" stroke="#B07A1E" stroke-width="2.4" stroke-dasharray="6 3"/>`;
+  a.forEach((v,i)=>s+=`<circle cx="${x(i)}" cy="${yv(v)}" r="3" fill="#0847F7"/>`);
+  b.forEach((v,i)=>s+=`<circle cx="${x(i)}" cy="${yv(v)}" r="3" fill="#B07A1E"/>`);
+  YEARS.forEach((y,i)=>s+=`<text x="${x(i)}" y="${H-7}" text-anchor="middle" font-size="10" fill="#5A6B85">${y}</text>`);
+  return s+"</svg>";
+}
+function ladder(rows,cls){
+  const cols=`grid-template-columns:210px repeat(${YEARS.length},1fr)`;
+  let h=`<div class="lgrid" style="${cols}"><div></div>`+
+    YEARS.map(y=>`<div class="gh">${y}</div>`).join("");
+  const bg=cls==="o1"?"#EDF1FF":"#FDF6E7", fg=cls==="o1"?"#0847F7":"#8A6114";
+  let any=false;
+  rows.forEach(r=>r.issued.forEach(g=>{
+    if(Math.abs(g.D)<0.5)return; any=true;
+    h+=`<div class="gl" title="${g.labelYear} ${g.tag}">${g.labelYear} ${g.tag}</div>`;
+    YEARS.forEach(y=>{const k=y-r.year;
+      const v=(k>=0&&k<=3)?g.D*VEC[g.vec][k]:0;
+      h+=v>0.5?`<div class="cellv" style="background:${bg};color:${fg}">${fmt(v)}</div>`:`<div></div>`;});
+  }));
+  if(!any)h+=`<div class="gl">No grants</div>`+YEARS.map(()=>"<div></div>").join("");
+  return h+"</div>";
+}
+function render(){
+  const c1=readCfg(1),c2=readCfg(2);
+  const r1=simulate(c1),r2=simulate(c2);
+  const t=c1.target;
+  const ceil=r1.map(r=>r.ceiling);
+  const f1=r1.reduce((a,r)=>a+r.face,0),f2=r2.reduce((a,r)=>a+r.face,0);
+  const ss1=r1[r1.length-1].total,ss2=r2[r2.length-1].total;
+  $("cards").innerHTML=[["o1","Option 1","100/15/5/5 grants and refreshes",ss1,f1,r1],
+    ["o2","Option 2","100/50 new hire, 50/50 refreshes",ss2,f2,r2]].map(([k,n,s,ss,f,rr])=>
+    `<div class="card ${k}"><h3>${n}</h3><div class="sub">${s}</div>
+     <div class="big">${fmt(ss)}</div><div class="cap">settles at ${fmtx(ss/t*100)}% of target</div>
+     <div class="row2"><div>Total granted<b>${fmt(f)}</b></div>
+     <div>Highest year<b>${fmt(Math.max(...rr.map(x=>x.total)))}</b></div>
+     <div>Lowest year<b>${fmt(Math.min(...rr.map(x=>x.total)))}</b></div></div></div>`).join("");
+  $("chart").innerHTML=lineChart(r1.map(r=>r.total),r2.map(r=>r.total),ceil);
+  const T=c1.T,py=c1.promoYear;
+  let th=`<tr><th>Year</th><th>Legacy</th><th>Opt 1 new</th><th>Opt 1 total</th><th>% ceiling</th>
+    <th>Opt 2 new</th><th>Opt 2 total</th><th>% ceiling</th><th>Difference</th></tr>`;
+  r1.forEach((r,i)=>{const q=r2[i];const y=r.year;
+    const cl=(y===T?' class="tr-year"':'');
+    const yl=(y===py)?`<span class="promo">${y}</span>`:y;
+    const p1=r.total/r.ceiling,p2=q.total/q.ceiling;
+    th+=`<tr${cl}><td class="y">${yl}</td><td>${fmt(r.legacy)}</td>
+     <td class="o1">${fmt(r.total-r.legacy)}</td><td class="o1 tot">${fmt(r.total)}</td>
+     <td class="o1 ${p1>1.005?'over':''}">${Math.round(p1*100)}%</td>
+     <td class="o2">${fmt(q.total-q.legacy)}</td><td class="o2 tot">${fmt(q.total)}</td>
+     <td class="o2 ${p2>1.005?'over':''}">${Math.round(p2*100)}%</td>
+     <td>${q.total-r.total===0?"same":(q.total>r.total?"+":"")+fmt(q.total-r.total)}</td></tr>`;});
+  $("tbl").innerHTML=th;
+  $("lad1").innerHTML=ladder(r1,"o1");
+  $("lad2").innerHTML=ladder(r2,"o2");
+  const fl=[];
+  [["Option 1",r1],["Option 2",r2]].forEach(([n,rr])=>{
+    const ov=rr.filter(r=>r.total>r.ceiling*1.005);
+    if(ov.length)fl.push([`${n} pays above the ceiling in ${ov.map(r=>r.year).join(", ")}.`,
+      `Highest is ${Math.round(Math.max(...ov.map(r=>r.total/r.ceiling))*100)}% of the ceiling. Legacy vesting is already at or above target, so the floor is what is paying.`]);
+    let dip=null;
+    for(let i=1;i<rr.length;i++) if(rr[i].total<rr[i-1].total-0.5&&(!dip||rr[i].total<dip.total))dip=rr[i];
+    if(dip&&dip.total<dip.ceiling*0.995)fl.push([`${n} falls to ${fmt(dip.total)} in ${dip.year}.`,
+      `That is below the ceiling for that year. Worth checking before the conversation.`]);
+  });
+  $("flags").innerHTML=fl.length?fl.map(([a,b])=>
+    `<div class="flag"><b>&#9679;</b><div><b style="color:inherit">${a}</b> ${b}</div></div>`).join("")
+    :`<div class="flag ok"><b>&#9679;</b><div>Neither option dips or pays above the ceiling for this person.</div></div>`;
+}
+buildControls();applyPreset("C 25 left");
+</script></body></html>
