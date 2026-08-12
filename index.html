@@ -114,12 +114,21 @@ border-right:0;border-bottom:1px solid var(--line)}.cards{grid-template-columns:
   <div class="lbl">Start from</div>
   <div class="presets" id="presets"></div>
 
-  <div class="lbl">Saved scenarios<span class="hint">Real examples you keep. Stored in this browser.</span></div>
+  <div class="lbl">Shared scenarios<span class="hint">Baked into the app. Anyone with the link sees these.</span></div>
+  <div class="presets" id="sharedList"></div>
+
+  <div class="lbl">Your saved scenarios<span class="hint">Real examples you keep. Stored in this browser only.</span></div>
   <div style="display:flex;gap:6px;margin-bottom:9px">
     <input id="scenName" placeholder="Name this scenario">
     <button id="scenSave" class="mini">Save</button>
   </div>
   <div class="presets" id="savedList"></div>
+  <div style="margin-top:8px"><button id="scenExport" class="saved" type="button" style="cursor:pointer">
+    <span>Copy current as JSON</span></button>
+    <div class="hint" style="margin-top:5px;font-size:11px;color:var(--mute);line-height:1.4">
+      To add a scenario for everyone: click Copy, paste into <code>SHARED_SCENARIOS</code> in <code>index.html</code>, commit.
+    </div>
+  </div>
 
   <div class="lbl">Annual LTI target</div>
   <input id="target" type="number" step="1000" value="100000">
@@ -267,6 +276,26 @@ const PRESETS={
  "Blank":{T:2030,leg:{}}
 };
 const ASSUMPTION_KEYS=["base","perfM","promo1","o2nh","o2ref","floorF"];
+
+// Shared scenarios: baked into the app, so everyone with the link sees them.
+// To add one: set the app up, click "Copy current as JSON", paste an entry
+// below (name → snapshot), commit, push. Values are absolute (dollars for
+// target/leg), matching the snapshot() format so shared and personal
+// scenarios use the same shape.
+const SHARED_SCENARIOS={
+  "IC, 25% left ($150k)":{target:"150000",T:"2030",promo:"",newhire:false,tails:true,
+    a:{base:"1.25",perfM:"1.5",promo1:"2",o2nh:"1.15",o2ref:"0.5",floorF:"0.25"},
+    leg:{2027:"150000",2028:"150000",2029:"150000",2030:"37500",2031:"0",2032:"0",2033:"0",2034:"0",2035:"0"},
+    perf:{2027:"Average",2028:"Average",2029:"Average",2030:"Average",2031:"Average",2032:"Average",2033:"Average",2034:"Average",2035:"Average"}},
+  "Manager, promo in T ($225k)":{target:"225000",T:"2027",promo:"2027",newhire:false,tails:true,
+    a:{base:"1.25",perfM:"1.5",promo1:"2",o2nh:"1.15",o2ref:"0.5",floorF:"0.25"},
+    leg:{2027:"112500",2028:"0",2029:"0",2030:"0",2031:"0",2032:"0",2033:"0",2034:"0",2035:"0"},
+    perf:{2027:"Average",2028:"Average",2029:"Average",2030:"Average",2031:"Average",2032:"Average",2033:"Average",2034:"Average",2035:"Average"}},
+  "Exec, stacked legacy ($350k)":{target:"350000",T:"2028",promo:"",newhire:false,tails:true,
+    a:{base:"1.25",perfM:"1.5",promo1:"2",o2nh:"1.15",o2ref:"0.5",floorF:"0.25"},
+    leg:{2027:"525000",2028:"437500",2029:"0",2030:"0",2031:"0",2032:"0",2033:"0",2034:"0",2035:"0"},
+    perf:{2027:"Average",2028:"Average",2029:"Average",2030:"Average",2031:"Average",2032:"Average",2033:"Average",2034:"Average",2035:"Average"}}
+};
 let active="C 25 left";
 let chartMode="stacked";
 const $=id=>document.getElementById(id);
@@ -292,6 +321,7 @@ function buildControls(){
     el.addEventListener("input",render);});
   $("scenSave").onclick=saveScenario;
   $("scenName").addEventListener("keydown",e=>{if(e.key==="Enter")saveScenario();});
+  $("scenExport").onclick=exportCurrent;
   $("btnStacked").onclick=()=>setChart("stacked");
   $("btnLines").onclick=()=>setChart("lines");
 }
@@ -346,6 +376,37 @@ function saveScenario(){
   if(!name){$("scenName").focus();return;}
   const store=loadStore(); store[name]=snapshot(); saveStore(store);
   $("scenName").value=""; renderSaved();
+}
+function renderShared(){
+  const w=$("sharedList"); w.innerHTML="";
+  const keys=Object.keys(SHARED_SCENARIOS);
+  if(!keys.length){w.innerHTML='<span class="none">No shared scenarios yet.</span>';return;}
+  keys.forEach(k=>{
+    const b=document.createElement("button"); b.type="button";
+    b.className="saved"; b.style.borderColor="var(--amber)";
+    b.innerHTML=`<span title="Shared — everyone sees this">${esc(k)}</span>`;
+    b.onclick=()=>applySnapshot(SHARED_SCENARIOS[k]);
+    w.appendChild(b);
+  });
+}
+function exportCurrent(){
+  const name=($("scenName").value||"Untitled").trim();
+  const snap=snapshot();
+  const json='  '+JSON.stringify(name)+': '+JSON.stringify(snap);
+  const btn=$("scenExport"); const label=btn.querySelector("span");
+  const orig=label.textContent;
+  const done=()=>{label.textContent="Copied to clipboard";setTimeout(()=>label.textContent=orig,1500);};
+  const fail=()=>{
+    // Fallback: dump to a textarea so the user can copy manually
+    const ta=document.createElement("textarea");
+    ta.value=json; ta.style.cssText="position:fixed;left:0;top:0;width:100%;height:120px;z-index:9999";
+    document.body.appendChild(ta); ta.select(); document.execCommand&&document.execCommand("copy");
+    setTimeout(()=>ta.remove(),3000);
+    label.textContent="Copied (fallback)";setTimeout(()=>label.textContent=orig,1500);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(json).then(done).catch(fail);
+  } else fail();
 }
 function renderSaved(){
   const store=loadStore(); const w=$("savedList"); const keys=Object.keys(store);
@@ -510,5 +571,5 @@ function render(){
     `<div class="flag"><b>&#9679;</b><div><b style="color:inherit">${a}</b> ${b}</div></div>`).join("")
     :`<div class="flag ok"><b>&#9679;</b><div>Neither option dips or pays above the ceiling for this person.</div></div>`;
 }
-buildControls();renderSaved();applyPreset("C 25 left");
+buildControls();renderShared();renderSaved();applyPreset("C 25 left");
 </script></body></html>
