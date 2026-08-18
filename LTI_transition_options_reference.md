@@ -1,4 +1,11 @@
-# LTI transition model — Option 1 vs Option 2
+# LTI transition model — Option 1 vs Option 2 (v1, historical)
+
+**Superseded.** The app (`index.html`) no longer runs this ruleset — it was
+replaced by the higher-of-A/B/floor engine described in
+[`LTI_transition_engine_v2.md`](LTI_transition_engine_v2.md), which also adds
+Option 3. This document is kept for historical context (why the gap-sizing
+rules below were built the way they were) but does not describe current
+behavior. Do not use it to predict what the app will output.
 
 **Status:** rules as validated through the Aug 2026 build sessions, engine v8/v9 (workbook), v3 (JS explorer). Both implementations reconcile to the cent across 522 test cells.
 **Index convention:** all figures are % of the person's annual LTI target unless noted (target = 100).
