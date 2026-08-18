@@ -6,7 +6,7 @@
 <style>
 :root{--blue:#0847F7;--blue-l:#AFC2FB;--navy:#0B101C;--amber:#B07A1E;--amber-l:#E7CE97;
 --bg:#F8FAFF;--line:#C8D3EA;--mute:#5A6B85;--o1bg:#EDF1FF;--o2bg:#FDF6E7;--warn:#B3261E;
---legacy:#8A97AD;--legacy-bg:#EEF1F6;--ok:#1B8F63}
+--legacy:#8A97AD;--legacy-bg:#EEF1F6;--ok:#1B8F63;--green:#0E7C66;--o3bg:#E9F5F1}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--navy);
 font:400 14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
@@ -67,12 +67,17 @@ padding:2px 2px;text-align:center;border:0}
 .gridtbl td:first-child{font:600 11px Inter;color:var(--navy);padding-right:4px}
 .gridtbl input{padding:3px 4px;font-size:11px;text-align:right}
 .gnote{font-size:10.5px;color:var(--mute);margin-top:6px;line-height:1.4}
-.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:22px}
 .card{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:#fff}
 .card.o1{border-top:3px solid var(--blue)}
 .card.o2{border-top:3px solid var(--amber)}
+.card.o3{border-top:3px solid var(--green)}
 .card h3{margin:0 0 2px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-.card.o1 h3{color:var(--blue)} .card.o2 h3{color:var(--amber)}
+.card.o1 h3{color:var(--blue)} .card.o2 h3{color:var(--amber)} .card.o3 h3{color:var(--green)}
+.optchk{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px}
+.optchk label{display:inline-flex;align-items:center;gap:6px;font:600 12px Inter;cursor:pointer;
+padding:5px 10px;border:1px solid var(--line);border-radius:5px;background:#fff}
+.optchk input{width:auto;margin:0}
 .card .sub{color:var(--mute);font-size:11.5px;margin-bottom:10px}
 .card .big{font:700 25px/1 Inter;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .card .cap{font-size:11.5px;color:var(--mute);margin-top:3px}
@@ -94,7 +99,7 @@ color:var(--mute);text-align:right;border-bottom:1px solid var(--line)}
 table.main th:first-child,table.main td:first-child{text-align:left}
 td.y{font-weight:600}
 tr.tr-year td{background:#FFF6D0}
-td.o1{background:var(--o1bg)} td.o2{background:var(--o2bg)}
+td.o1{background:var(--o1bg)} td.o2{background:var(--o2bg)} td.o3{background:var(--o3bg)}
 td.tot{font-weight:600}
 .promo{color:var(--blue);font-weight:700}
 .over{color:var(--warn);font-weight:600}
@@ -189,6 +194,7 @@ border-right:0;border-bottom:1px solid var(--line)}.cards{grid-template-columns:
   </details>
 </aside>
 <main>
+  <div class="optchk" id="optchk"></div>
   <div class="cards" id="cards"></div>
 
   <div class="h2row"><h2>Total annual vest</h2>
@@ -205,10 +211,7 @@ border-right:0;border-bottom:1px solid var(--line)}.cards{grid-template-columns:
   <h2>Year by year</h2>
   <div style="overflow-x:auto"><table class="main" id="tbl"></table></div>
 
-  <h2>What gets granted, Option 1</h2>
-  <div class="ladder" id="lad1"></div>
-  <h2>What gets granted, Option 2</h2>
-  <div class="ladder" id="lad2"></div>
+  <div id="ladders"></div>
 </main></div>
 <script>
 /* ============================================================
@@ -227,7 +230,9 @@ const SCHEDULES = {
     nhCol:'aNH1',                  // rating-grid column for new hires
     roomTest:false,
     preTail:true,                  // pre-transition grants can carry the tail
-    premiumOnPromo:false           // promoted ceiling = aExist x H
+    preAlways:false,               // tail toggle governs pre-transition shape
+    promoYearFlat:true,            // promo-year grant gaps to 2M; 1.25x is refresh-only
+    premiumOnPromo:false           // post-promo ceiling = aExist x H
   },
   opt2:{
     key:'opt2', name:'Option 2', sub:'100/50 and 50/50',
@@ -239,10 +244,26 @@ const SCHEDULES = {
     nhCol:'aNH2',
     roomTest:true,
     preTail:false,                 // pre-transition grants are always one-year
+    preAlways:false,
+    promoYearFlat:false,           // Opt 2 sits flat at 1.15 x 2M from the promo year on
     premiumOnPromo:true            // promoted ceiling carries the 1.15x
+  },
+  opt3:{
+    key:'opt3', name:'Option 3', sub:'100/75/50/25',
+    color:'#0E7C66', colorL:'#9FD4C7', bg:'#E9F5F1', fg:'#0E7C66', cls:'o3',
+    grantVec:[1,.75,.5,.25],
+    refreshVec:[1,.75,.5,.25],     // same shape every year, no separate refresh
+    abcForNewHire:true,
+    abcForExisting:true,
+    nhCol:'aNH1',                  // new hires at 1.00x, like Option 1
+    roomTest:false,                // simplified: no room test
+    preTail:true,
+    preAlways:true,                // full shape from the start, ignores the tail toggle
+    promoYearFlat:true,            // promo-year grant gaps to 2M
+    premiumOnPromo:false
   }
 };
-const ORDER=['opt1','opt2'];
+const ALL=['opt1','opt2','opt3'];
 const VEC_PUSH=[0,1,.5,0];         // Option 2 grant 2 deferred to T+1
 
 /* Rating grid defaults. Every cell is editable in the UI. */
@@ -272,15 +293,19 @@ function simulate(cfg, sk){
   // curve so a Meet promoted person lands exactly on o2nh x M.
   const promoScale=(grid[3].aEx>0)?o2nh/grid[3].aEx:o2nh;
 
-  // A-leg multiple for this person, this year, this schedule.
-  function ceilMult(y,r){
-    const g=grid[r];
-    if(isPromoted(y)) return S.premiumOnPromo ? g.aEx*promoScale : g.aEx;
-    return newHire ? g[S.nhCol] : g.aEx;
+  // A-leg ceiling value for this person, this year, this schedule.
+  // The promotion year itself gaps to the new M outright; the 1.25x (or
+  // whatever the rating grid says) only applies to refreshes after it.
+  function ceilVal(y,r){
+    const g=grid[r], H=Hof(y);
+    if(promoYear!=null && y===promoYear && S.promoYearFlat) return promoMult*M0;
+    if(isPromoted(y)) return (S.premiumOnPromo ? g.aEx*promoScale : g.aEx)*H;
+    return (newHire ? g[S.nhCol] : g.aEx)*H;
   }
 
-  // Pre-transition grants are one-year, except Option 1 with the tail toggle on.
-  const preVec=S=>S.preTail&&tails?S.grantVec:[1,0,0,0];
+  // Pre-transition grants are one-year, unless the schedule always carries its
+  // full shape (Option 3) or the tail toggle is on (Option 1).
+  const preVec=S=>S.preAlways?S.grantVec:(S.preTail&&tails?S.grantVec:[1,0,0,0]);
 
   const grants=[],rows=[];
   const priorAt=y=>{let p=0;
@@ -290,7 +315,7 @@ function simulate(cfg, sk){
   // Pre-compute the T-year push decision for Option 2's room test.
   let pushed=false;
   if(S.roomTest && !newHire){
-    const r=rating[T]||3, lvl=ceilMult(T,r)*Hof(T), half=o2ref*lvl;
+    const r=rating[T]||3, lvl=ceilVal(T,r), half=o2ref*lvl;
     pushed=(lvl-(legN[T]||0)-half) < (grid[r].fl*Mof(T));
   }
 
@@ -305,7 +330,7 @@ function simulate(cfg, sk){
     const add=(D,vec,tag,ly)=>iss.push({D:Math.max(0,D),vec,tag,labelYear:ly||y});
 
     // ---- Year 1 value: higher of A, B, floor ----
-    const A=ceilMult(y,r)*H-N;
+    const A=ceilVal(y,r)-N;
     const B=g.b*M-C;
     const F=g.fl*M;
     const noGrant=(r===NO_GRANT_RATING);
@@ -318,7 +343,7 @@ function simulate(cfg, sk){
       // rating 1: no new grant this year
     } else if(abcApplies){
       if(S.roomTest && y===T && !newHire){
-        const lvl=ceilMult(y,r)*H, half=o2ref*lvl, room=lvl-lN-half;
+        const lvl=ceilVal(y,r), half=o2ref*lvl, room=lvl-lN-half;
         if(room>=g.fl*M){
           const g1=Math.max(room,y1-half);
           if(lN<=1e-9 && Math.abs(g1-half)<1e-6) add(lvl,S.grantVec,'Transition grant, single');
@@ -339,7 +364,7 @@ function simulate(cfg, sk){
       }
     } else {
       // Full-size grant: no netting against what is already vesting.
-      const full=ceilMult(y,r)*H;
+      const full=ceilVal(y,r);
       const vec=(y<T && !newHire && sk==='opt1' && !tails)?[1,0,0,0]:
                 (y===T?S.grantVec:S.refreshVec);
       const amt=(sk==='opt2'&&!newHire)?o2ref*full:full;
@@ -349,7 +374,7 @@ function simulate(cfg, sk){
     let own=0;
     for(const it of iss){own+=it.D*it.vec[0];grants.push({fy:y,D:it.D,vec:it.vec});}
     rows.push({year:y, legN:lN, legC:lC, prior, M, H,
-               ceiling:ceilMult(y,r)*H,
+               ceiling:ceilVal(y,r),
                totalN:N+own, totalC:C+own, newVest:own,
                issued:iss, why});
   }
@@ -393,6 +418,8 @@ const SHARED_SCENARIOS={
 };
 
 let chartMode="stacked", basis="notional";
+const shown={opt1:true,opt2:true,opt3:true};
+const vis=()=>ALL.filter(k=>shown[k]);
 const $=id=>document.getElementById(id);
 const fmt=v=>{const t=+$("M").value||1;
   if(t>=1000)return (v<0?"-":"")+"$"+Math.round(Math.abs(v)/1000)+"k";
@@ -413,6 +440,12 @@ function buildControls(){
      <input type="number" step="1000" id="c${y}" value="0">
      <select id="r${y}">${RATINGS.map(r=>`<option value="${r}"${r===3?" selected":""}>${r}</option>`).join("")}</select>
      </div>`).join("");
+  $("optchk").innerHTML=ALL.map(k=>{const S=SCHEDULES[k];
+    return `<label style="border-left:4px solid ${S.color}">
+      <input type="checkbox" class="optbox" data-k="${k}" checked>
+      ${S.name} &middot; ${S.sub}</label>`;}).join("");
+  document.querySelectorAll(".optbox").forEach(b=>b.addEventListener("change",()=>{
+    shown[b.dataset.k]=b.checked;render();}));
   $("gridBody").innerHTML=RATINGS.map(r=>
     `<tr><td>${r}${r===3?" M":r===5?" E":""}</td>`+
     GRID_COLS.map(c=>`<td><input type="number" step="0.01" id="g_${r}_${c}" value="${GRID_DEFAULTS[r][c]}"></td>`).join("")+
@@ -543,9 +576,9 @@ function axis(P,W,H,max,min){
     <text x="${P.l-8}" y="${yv(v)+4}" text-anchor="end" font-size="10" fill="#5A6B85">${t>=1000?"$"+Math.round(v/1000)+"k":Math.round(v)}</text>`;});
   return {svg:s,yv};
 }
-function lineChart(res){
-  const ref=res[ORDER[0]].map(r=>r.M);
-  const series=ORDER.map(k=>res[k].map(tot));
+function lineChart(res,ks){
+  const ref=res[ks[0]].map(r=>r.M);
+  const series=ks.map(k=>res[k].map(tot));
   const W=880,H=214,P={l:52,r:14,t:12,b:26};
   const max=Math.max(...series.flat(),...ref)*1.08,min=0;
   const {svg,yv}=axis(P,W,H,max,min);
@@ -553,44 +586,45 @@ function lineChart(res){
   const path=a=>a.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+yv(v).toFixed(1)).join(" ");
   let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img">`+svg;
   s+=`<path d="${path(ref)}" fill="none" stroke="#8A97AD" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-  ORDER.forEach((k,j)=>{const S=SCHEDULES[k];
-    s+=`<path d="${path(series[j])}" fill="none" stroke="${S.color}" stroke-width="2.4"${j?' stroke-dasharray="6 3"':''}/>`;
+  ks.forEach((k,j)=>{const S=SCHEDULES[k];
+    s+=`<path d="${path(series[j])}" fill="none" stroke="${S.color}" stroke-width="2.4"${j?` stroke-dasharray="${j===1?'6 3':'2 2'}"`:''}/>`;
     series[j].forEach((v,i)=>s+=`<circle cx="${x(i)}" cy="${yv(v)}" r="3" fill="${S.color}"/>`);});
   YEARS.forEach((y,i)=>s+=`<text x="${x(i)}" y="${H-7}" text-anchor="middle" font-size="10" fill="#5A6B85">${y}</text>`);
   return s+"</svg>";
 }
-function stackedBar(res){
-  const ref=res[ORDER[0]].map(r=>r.M);
+function stackedBar(res,ks){
+  const ref=res[ks[0]].map(r=>r.M);
   const W=880,H=250,P={l:52,r:14,t:18,b:34};
-  const all=ORDER.flatMap(k=>res[k].map(tot));
+  const all=ks.flatMap(k=>res[k].map(tot));
   const max=Math.max(...all,...ref)*1.12,min=0;
   const {svg,yv}=axis(P,W,H,max,min);
-  const n=YEARS.length,band=(W-P.l-P.r)/n,bw=band*0.30,gap=band*0.06;
+  const n=YEARS.length,band=(W-P.l-P.r)/n;
+  const groupW=band*0.78, step=groupW/ks.length, bw=step*0.84;
   let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img">`+svg;
   const rect=(x,vT,vB,f)=>{const a=yv(vT),b=yv(vB);
     return `<rect x="${x.toFixed(1)}" y="${a.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,b-a).toFixed(1)}" fill="${f}"/>`;};
   YEARS.forEach((y,i)=>{
-    const cx=P.l+band*(i+0.5);
-    ORDER.forEach((k,j)=>{
+    const cx=P.l+band*(i+0.5), x0=cx-groupW/2;
+    ks.forEach((k,j)=>{
       const S=SCHEDULES[k],R=res[k][i],L=legOf(R),Tt=tot(R);
-      const x=cx+(j?gap/2:-bw-gap/2);
+      const x=x0+j*step+(step-bw)/2;
       s+=rect(x,L,0,S.colorL);
       s+=rect(x,Tt,L,S.color);
-      if(Tt>0.5)s+=`<text x="${(x+bw/2).toFixed(1)}" y="${(yv(Tt)-4).toFixed(1)}" text-anchor="middle" font-size="9" fill="${S.fg}" font-weight="600">${fmt(Tt)}</text>`;
+      if(Tt>0.5)s+=`<text x="${(x+bw/2).toFixed(1)}" y="${(yv(Tt)-4).toFixed(1)}" text-anchor="middle" font-size="${ks.length>2?8:9}" fill="${S.fg}" font-weight="600">${fmt(Tt)}</text>`;
     });
-    s+=`<line x1="${(cx-bw-gap/2).toFixed(1)}" x2="${(cx+bw+gap/2).toFixed(1)}" y1="${yv(ref[i]).toFixed(1)}" y2="${yv(ref[i]).toFixed(1)}" stroke="#5A6B85" stroke-width="1.6" stroke-dasharray="3 2"/>`;
+    s+=`<line x1="${x0.toFixed(1)}" x2="${(x0+groupW).toFixed(1)}" y1="${yv(ref[i]).toFixed(1)}" y2="${yv(ref[i]).toFixed(1)}" stroke="#5A6B85" stroke-width="1.6" stroke-dasharray="3 2"/>`;
     s+=`<text x="${cx.toFixed(1)}" y="${H-7}" text-anchor="middle" font-size="10" fill="#5A6B85">${y}</text>`;
   });
   return s+"</svg>";
 }
-function renderLegend(){
+function renderLegend(ks){
   const bl=basis==="notional"?"notional":"current";
   $("legend").innerHTML = chartMode==="stacked"
-    ? ORDER.map(k=>{const S=SCHEDULES[k];
+    ? ks.map(k=>{const S=SCHEDULES[k];
         return `<span><i style="background:${S.color}"></i>${S.name} new grants</span>
                 <span><i style="background:${S.colorL}"></i>${S.name} legacy vest (${bl})</span>`;}).join("")
       +`<span><i class="line" style="background:#5A6B85"></i>M, market band</span>`
-    : ORDER.map(k=>{const S=SCHEDULES[k];
+    : ks.map(k=>{const S=SCHEDULES[k];
         return `<span><i class="line" style="background:${S.color}"></i>${S.name}, ${S.sub}</span>`;}).join("")
       +`<span><i class="line" style="background:#8A97AD"></i>M, market band</span>`;
 }
@@ -626,10 +660,17 @@ function ladder(rows,sk){
 /* ---- Render ---- */
 function render(){
   const cfg=readCfg();
-  const res={};ORDER.forEach(k=>res[k]=simulate(cfg,k));
+  const res={};ALL.forEach(k=>res[k]=simulate(cfg,k));
   const T=cfg.T,py=cfg.promoYear;
+  const ks=vis();
+  if(!ks.length){
+    $("cards").innerHTML=`<div class="card"><div class="sub">No options selected. Tick one above.</div></div>`;
+    $("chart").innerHTML="";$("legend").innerHTML="";$("flags").innerHTML="";
+    $("whytbl").innerHTML="";$("tbl").innerHTML="";$("ladders").innerHTML="";
+    return;
+  }
 
-  $("cards").innerHTML=ORDER.map(k=>{
+  $("cards").innerHTML=ks.map(k=>{
     const S=SCHEDULES[k],rr=res[k];
     const ss=tot(rr[rr.length-1]);
     const face=rr.reduce((a,r)=>a+r.issued.reduce((b,g)=>b+g.D*g.vec.reduce((x,v)=>x+v,0),0),0);
@@ -640,12 +681,12 @@ function render(){
       <div>Highest year<b>${fmt(Math.max(...rr.map(tot)))}</b></div>
       <div>Lowest year<b>${fmt(Math.min(...rr.map(tot)))}</b></div></div></div>`;}).join("");
 
-  $("chart").innerHTML=chartMode==="stacked"?stackedBar(res):lineChart(res);
-  renderLegend();
+  $("chart").innerHTML=chartMode==="stacked"?stackedBar(res,ks):lineChart(res,ks);
+  renderLegend(ks);
 
-  // Why table: shows A, B, floor and which one won, for the first schedule
-  // that actually runs the A/B/C logic this year.
-  const src=res[ORDER.find(k=>SCHEDULES[k].abcForExisting)||ORDER[0]];
+  // Why table: shows A, B, floor and which one won, for the first visible
+  // schedule that actually runs the A/B/C logic.
+  const src=res[ks.find(k=>SCHEDULES[k].abcForExisting)||ks[0]];
   let wh=`<tr><th>Year</th><th>H</th><th>M</th><th>N</th><th>C</th>
     <th>A: notional</th><th>B: current</th><th>C: floor</th><th>Y1 value</th><th>Basis</th></tr>`;
   src.forEach(r=>{const w=r.why;
@@ -658,24 +699,27 @@ function render(){
       <td class="leg-src">${w.pick==='none'?'rating 1':(w.applies?w.pick.toUpperCase():'full size')}</td></tr>`;});
   $("whytbl").innerHTML=wh;
 
+  const pair=ks.length===2;
   let th=`<tr><th>Year</th><th>Legacy N</th><th>Legacy C</th>`+
-    ORDER.map(k=>`<th>${SCHEDULES[k].name} new</th><th>${SCHEDULES[k].name} total</th><th>% of M</th>`).join("")+
-    `<th>Difference</th></tr>`;
+    ks.map(k=>`<th>${SCHEDULES[k].name} new</th><th>${SCHEDULES[k].name} total</th><th>% of M</th>`).join("")+
+    (pair?`<th>Difference</th>`:``)+`</tr>`;
   YEARS.forEach((y,i)=>{
-    const a=res[ORDER[0]][i],b=res[ORDER[1]][i];
+    const a=res[ks[0]][i];
     th+=`<tr${y===T?' class="tr-year"':''}><td class="y">${y===py?`<span class="promo">${y}</span>`:y}</td>
       <td>${fmt(a.legN)}</td><td>${fmt(a.legC)}</td>`+
-      ORDER.map(k=>{const S=SCHEDULES[k],r=res[k][i],p=r.M>0?tot(r)/r.M:0;
+      ks.map(k=>{const S=SCHEDULES[k],r=res[k][i],p=r.M>0?tot(r)/r.M:0;
         return `<td class="${S.cls}">${fmt(r.newVest)}</td><td class="${S.cls} tot">${fmt(tot(r))}</td>
                 <td class="${S.cls} ${p>1.005?'over':''}">${Math.round(p*100)}%</td>`;}).join("")+
-      `<td>${tot(b)-tot(a)===0?"same":(tot(b)>tot(a)?"+":"")+fmt(tot(b)-tot(a))}</td></tr>`;});
+      (pair?`<td>${tot(res[ks[1]][i])-tot(a)===0?"same":(tot(res[ks[1]][i])>tot(a)?"+":"")+fmt(tot(res[ks[1]][i])-tot(a))}</td>`:``)+
+      `</tr>`;});
   $("tbl").innerHTML=th;
 
-  $("lad1").innerHTML=ladder(res.opt1,"opt1");
-  $("lad2").innerHTML=ladder(res.opt2,"opt2");
+  $("ladders").innerHTML=ks.map(k=>
+    `<h2>What gets granted, ${SCHEDULES[k].name} &middot; ${SCHEDULES[k].sub}</h2>
+     <div class="ladder">${ladder(res[k],k)}</div>`).join("");
 
   const fl=[];
-  ORDER.forEach(k=>{const S=SCHEDULES[k],rr=res[k];
+  ks.forEach(k=>{const S=SCHEDULES[k],rr=res[k];
     // Overshoot is measured against the person's own entitlement (the A-leg
     // ceiling), not M — a healthy steady state already sits above M by design.
     const ov=rr.filter(r=>r.ceiling>0&&tot(r)>r.ceiling*1.005);
