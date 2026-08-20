@@ -141,11 +141,11 @@ different values without a code change. A representative set of defaults
 | Rating | A, existing | A, new hire (grp 1) | A, new hire (grp 2) | B | Floor | Promo |
 |---|---|---|---|---|---|---|
 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 2 | 0.90 | 0.80 | 0.80 | 0.80 | 0.20 | 0.90 |
-| 3 (Meet) | 1.25 | 1.00 | 1.15 | 1.00 | 0.25 | 0.90 |
-| 4 | 1.38 | 1.25 | 1.25 | 1.25 | 0.30 | 1.00 |
-| 5 (Exceptional) | 1.50 | 1.50 | 1.50 | 1.50 | 0.40 | 1.10 |
-| 6 | 2.00 | 2.00 | 2.00 | 2.00 | 0.50 | 1.20 |
+| 2 | 0.80 | 0.75 | 0.75 | 0.75 | 0.15 | 1.00 |
+| 3 (Meet) | 1.15 | 1.00 | 1.15 | 1.00 | 0.20 | 1.00 |
+| 4 | 1.20 | 1.07 | 1.10 | 1.07 | 0.25 | 1.10 |
+| 5 (Exceptional) | 1.25 | 1.15 | 1.20 | 1.15 | 0.30 | 1.15 |
+| 6 | 1.30 | 1.30 | 1.30 | 1.30 | 0.40 | 1.30 |
 
 Note that at rating 3 ("Meet"), the existing-employee multiple (1.25) is
 intentionally higher than either new-hire column (1.00 / 1.15) — an
@@ -359,13 +359,12 @@ Rating 3 (Meet) uses the default grid from §4 unless stated.
 
 6. **Promotion-by-rating.** Holding `M_original = 100,000`,
    `PromotionMultiple = 2` fixed and varying only the rating (using the
-   default grid's Promo column: 0.90 / 0.90 / 1.00 / 1.10 / 1.20 for
+   default grid's Promo column: 1.00 / 1.00 / 1.10 / 1.15 / 1.30 for
    ratings 2–6), a Pattern-A schedule's promotion-year ceiling reads:
-   rating 2 → 180,000; rating 3 → 180,000; rating 4 → 200,000; rating 5 →
-   220,000; rating 6 → 240,000. Ratings 2 and 3 produce the *same*
-   promotion ceiling (both 0.90) — a policy choice. A Pattern-B schedule
-   with a 1.15× premium reads: 207,000 / 207,000 / 230,000 / 253,000 /
-   276,000 over the same ratings.
+   rating 2 → 200,000; rating 3 → 200,000; rating 4 → 220,000; rating 5 →
+   230,000; rating 6 → 260,000. A Pattern-B schedule with a 1.15× premium
+   reads: 230,000 / 230,000 / 253,000 / 264,500 / 299,500 over the same
+   ratings.
 
 ---
 

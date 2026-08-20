@@ -115,11 +115,11 @@ Current defaults:
 | Rating | aEx | aNH1/3 | aNH2 | b | fl | pr |
 |---|---|---|---|---|---|---|
 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 2 | 0.90 | 0.80 | 0.80 | 0.80 | 0.20 | 0.90 |
-| 3 (Meet) | 1.25 | 1.00 | 1.15 | 1.00 | 0.25 | 0.90 |
-| 4 | 1.38 | 1.25 | 1.25 | 1.25 | 0.30 | 1.00 |
-| 5 (Exceptional) | 1.50 | 1.50 | 1.50 | 1.50 | 0.40 | 1.10 |
-| 6 | 2.00 | 2.00 | 2.00 | 2.00 | 0.50 | 1.20 |
+| 2 | 0.80 | 0.75 | 0.75 | 0.75 | 0.15 | 1.00 |
+| 3 (Meet) | 1.15 | 1.00 | 1.15 | 1.00 | 0.20 | 1.00 |
+| 4 | 1.20 | 1.07 | 1.10 | 1.07 | 0.25 | 1.10 |
+| 5 (Exceptional) | 1.25 | 1.15 | 1.20 | 1.15 | 0.30 | 1.15 |
+| 6 | 1.30 | 1.30 | 1.30 | 1.30 | 0.40 | 1.30 |
 
 Rating 1 issuing no grant is enforced in code (`NO_GRANT_RATING = 1`), not
 just by zeroing the grid — even if someone edits row 1's multiples to be
@@ -242,9 +242,9 @@ treat as regression checks:
   200k (Options 1/3) and 230k (Option 2); steady state after settles at
   250k (Options 1/3) and 230k flat (Option 2).
 - **Promotion ceiling scaling by rating** (M0=100k): reading the `pr`
-  column (0.90/0.90/1.00/1.10/1.20 for ratings 2–6), Options 1/3 read
-  180k/180k/200k/220k/240k across those ratings; Option 2 reads
-  207k/207k/230k/253k/276k over the same range.
+  column (1.00/1.00/1.10/1.15/1.30 for ratings 2–6), Options 1/3 read
+  200k/200k/220k/230k/260k across those ratings; Option 2 reads
+  230k/230k/253k/264.5k/299.5k over the same range.
 - **Option 3 tail toggle:** off holds pre-transition years flat at the
   ceiling with no drift; on reproduces the same stacking drift documented
   for Option 1 in the v1 ruleset (e.g. 125/144/156 on a 25%-left persona).
